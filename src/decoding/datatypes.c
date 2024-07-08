@@ -8,6 +8,7 @@
 #include "common.h"
 #include <endian.h>
 #include <string.h>
+#include <unistd.h>
 
 
 #define VARINT_SEGMENT      0x7F
@@ -43,6 +44,28 @@ DEF_VAR_DECODE(decodeVarInt, int32_t, 32);
 DEF_VAR_DECODE(decodeVarIntUnsigned, uint32_t, 32);
 DEF_VAR_DECODE(decodeVarLong, int64_t, 64);
 DEF_VAR_DECODE(decodeVarLongUnsigned, uint64_t, 64);
+
+int decodeVarIntFromFd(int fd, int* res){
+    *res = 0;
+    int position = 0;
+    uint8_t currentByte;
+
+    do {
+        if (position >= 32){
+            errno = EOVERFLOW;
+            return -1;
+        }
+        if (1 > read(fd, &currentByte, 1))
+            return -1;
+        *res |= (currentByte & VARINT_SEGMENT) << position;
+        if ((currentByte & VARINT_CONTINUE_BIT) == 0) break;
+
+        position += 7;
+
+    }while((currentByte & VARINT_CONTINUE_BIT) != 0);
+    return 0;
+}
+
 
 // ===========================================================
 //           UNIVERSAL VARINT ENCODER MACRO FUNCTION
@@ -184,6 +207,7 @@ int decodeFixedUtf8String(BUFF* buff, uint8_t** result, size_t length){
         if ((0x80 & currentByte) == 0) length--;
     }
     *(itr) = 0;
+    buff->index = from - buff->data;
     return 0;
 }
 int decodeString(BUFF* buff, uint8_t** result, size_t knownMaxOrDefault){

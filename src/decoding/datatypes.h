@@ -51,7 +51,7 @@ typedef struct{
     uint64_t mostSignificant;
 } UUID;
 
-
+int decodeVarIntFromFd(int fd, int* res);
 int decodeVarInt(BUFF *buff, int32_t *value);
 int decodeVarIntUnsigned(BUFF *buff, uint32_t *value);
 int decodeVarLong(BUFF *buff, int64_t *value);

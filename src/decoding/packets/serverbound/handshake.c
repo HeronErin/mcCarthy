@@ -19,7 +19,9 @@ typedef struct{
     NextHandshakeState state; // Varint
 } HandshakePacketC2S;
 
-int decodeHandshakePacketC2S(uint8_t packetId, BUFF* buff, HandshakePacketC2S* result){
+int decodeHandshakePacketC2S(uint8_t packetId, BUFF* buff, HandshakePacketC2S** resultptr){
+    *resultptr = malloc(sizeof(HandshakePacketC2S));
+    HandshakePacketC2S* result = *resultptr; 
     result->packet.packetId = packetId;
     result->packet.isServerBound = true;
     result->serverAddress = NULL;

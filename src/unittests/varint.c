@@ -1,6 +1,7 @@
 #include "testing.h"
 #include "../decoding/datatypes.h"
 #include "../common.h"
+#include <errno.h>
 
 
 const uint8_t test1[] = {0}; // Decimal value: 0
@@ -54,7 +55,31 @@ int main(){
     ASSERT_EQ(25565, test7c);
     ASSERT_EQ(test7b->index, 3);
 
-    
+    BUFF* b = makeBuff(0, 0);
+    for (int i = 0; i < 1000; i++){
+        b->index = 0;
+        encodeVarInt(&b, i);
+        ASSERT_SUCCESS();
+        b->index = 0;
+        ASSERT_EQ(i, decodeVarInt(b));
+        ASSERT_SUCCESS();
+
+        b->index = 0;
+        encodeVarInt(&b, -i);
+        ASSERT_SUCCESS();
+        b->index = 0;
+        ASSERT_EQ(-i, decodeVarInt(b));
+        ASSERT_SUCCESS();
+    }
+
+    b->index = 0;
+    encodeVarLong(&b, -1);
+    ASSERT_SUCCESS();
+    b->index = 0;
+    ASSERT_EQ(-1, decodeVarLong(b));
+    b->index = 0;
+    ASSERT_EQ(0, decodeVarInt(b));
+    ASSERT_FAILURE(EOVERFLOW);
 
     return 0;
 

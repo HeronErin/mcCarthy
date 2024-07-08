@@ -21,7 +21,7 @@
         strerror(errno), errno                     \
     );                                             \
     exit(-1);                                      \
-}
+} errno = 0
 
 #define ASSERT(XXXX) if (!(XXXX)){                           \
     fprintf(stderr,                                          \

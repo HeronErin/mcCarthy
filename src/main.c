@@ -19,9 +19,8 @@ int main(){
 //     UUID x2;
 //     decodeUUID(b, &x2);
 //     printf("We got %lu %lu\n", x2.mostSignificant, x2.leastSignificant);
-    cJSON *json = cJSON_Parse("[1, 2, 3, 4]");
-    printf("len: %x\n", json->type == cJSON_Array);
-
+    cJSON *json = cJSON_Parse("[1, 2, 3, \n4]");
+    printf("len: %lu\n", cJSON_GetArraySize(json));
     cJSON_free(json);
     return 0;
 }

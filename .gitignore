@@ -1,3 +1,4 @@
 MC
 *.o
 .vscode/
+*/*.o

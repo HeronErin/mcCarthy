@@ -1,21 +1,24 @@
 CC      = gcc
-CFLAGS  = -g
+CFLAGS  = -g -IcJSON
 RM      = rm -f
 
-SRC     = src
+
 TESTSRC = src/unittests
 TESTS   = $(wildcard $(TESTSRC)/*.c)
 TESTOBJS= $(TESTS:.c=.o)
 
 default: MC
 
-MC: $(SRC)/main.c
-	$(CC) $(CFLAGS) -o MC $(SRC)/main.c
+MC: cJSON/cJSON.o src/main.c
+	$(CC) $(CFLAGS) -o MC src/main.c cJSON/cJSON.o
+
+cJSON/cJSON.o:
+	$(CC) $(CFLAGS) -shared -o cJSON/cJSON.o cJSON/cJSON.c
 
 run: clean MC
 	./MC
 
-test: clean $(TESTOBJS)
+test: clean cJSON/cJSON.o $(TESTOBJS)
 	@for test in $(TESTOBJS); do \
 		echo "Running $$test"; \
 		./$$test; \
@@ -25,4 +28,4 @@ $(TESTSRC)/%.o: $(TESTSRC)/%.c
 	$(CC) $(CFLAGS) -o $@ $<
 
 clean:
-	-$(RM) MC $(TESTOBJS)
+	-$(RM) MC $(TESTOBJS)  

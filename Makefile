@@ -2,16 +2,27 @@ CC      = gcc
 CFLAGS  = -g
 RM      = rm -f
 
+SRC     = src
+TESTSRC = src/unittests
+TESTS   = $(wildcard $(TESTSRC)/*.c)
+TESTOBJS= $(TESTS:.c=.o)
 
 default: MC
 
-# op.o: src/disassembler/op.c
-# 	$(CC) $(CFLAGS) -c src/disassembler/op.c -o op.o
-MC: src/main.c
-	$(CC) $(CFLAGS) -o MC src/main.c
+MC: $(SRC)/main.c
+	$(CC) $(CFLAGS) -o MC $(SRC)/main.c
 
-run: clean MC
+run: MC
 	./MC
 
+test: clean $(TESTOBJS)
+	@for test in $(TESTOBJS); do \
+		echo "Running $$test"; \
+		./$$test | true; \
+	done
+
+$(TESTSRC)/%.o: $(TESTSRC)/%.c
+	$(CC) $(CFLAGS) -o $@ $<
+
 clean:
-	-$(RM) MC
+	-$(RM) MC $(TESTOBJS)

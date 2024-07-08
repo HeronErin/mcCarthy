@@ -27,12 +27,12 @@ TCP_ACTION handleStatusRequest(WorldState **world, PlayerState **player, int pac
     return TCP_ACT_NOTHING;
 }
 TCP_ACTION handlePing(WorldState **world, PlayerState **player, int packetId, PacketPrototype *packet){
-    // SEND(*player, packet, &encodePongResponseS2C);
+    SEND(*player, packet, &encodePongResponseS2C);
     return TCP_ACT_NOTHING;
 }
 
 const CallbackCollection* makeHandshakeCollection(){
-    CallbackCollection* c = calloc(1, sizeof(CallbackCollection));
+    CallbackCollection* c = createCollection();
     
     c->decoders[0x00] = (DecodePacketCallback) &decodeHandshakePacketC2S;
     addPacketCallback(c, 0x00, (OnPacketCallback)&handleHandshake);
@@ -40,7 +40,7 @@ const CallbackCollection* makeHandshakeCollection(){
     return c;
 }
 const CallbackCollection* makePingCollection(){
-    CallbackCollection* c = calloc(1, sizeof(CallbackCollection));
+    CallbackCollection* c = createCollection();
     
     c->decoders[0x00] = &decodeStatusRequestPacketC2S;
     c->decoders[0x01] = (DecodePacketCallback) &decodePingPacketC2S;

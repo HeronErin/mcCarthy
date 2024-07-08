@@ -14,7 +14,7 @@ int sendPacket(PlayerState *player, PacketPrototype* proto, SendPacketCallback s
         return -1;
     printf("Size: %lu  Index: %lu\n", buff->size, buff->index);
     size_t oldIndex = buff->index;
-    int oldSize = buff->size;
+    int oldSize = buff->index;
     if (0 != encodeVarInt(&buff, oldSize))
         return -1;
     printf("Size: %lu  Index: %lu\n", buff->size, buff->index);

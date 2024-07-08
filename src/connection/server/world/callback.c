@@ -6,7 +6,7 @@
 CallbackCollection* createCollection(){
     CallbackCollection* c = calloc(1, sizeof(CallbackCollection));
     c->blobReserve = 128;
-    c->callbackBlob = calloc(c->blobReserve, sizeof(CallbackNode));
+    c->callbackBlob = calloc(1, c->blobReserve * sizeof(CallbackNode));
     return c;
 }
 
@@ -21,6 +21,7 @@ void addPacketCallback(CallbackCollection* collection, int packetId, OnPacketCal
     }
     if (collection->blobSize >= collection->blobReserve)
         collection->callbackBlob = realloc(collection->callbackBlob, (collection->blobReserve*=2) * sizeof(CallbackNode));
+    fprintf(stderr, "blobSize: %lu %lu\n", collection->blobSize, collection->blobReserve);
     CallbackNode* node = &collection->callbackBlob[collection->blobSize++];
     node->next = NULL;
     node->callback = callback;

@@ -23,7 +23,7 @@ static const CallbackCollection* STATUS_PACKETS = NULL;
 void initWorld(void** state){
     *state = realloc(*state, sizeof(WorldState));
     WorldState* world = *(WorldState**)state;
-    world->motd = "{ \"version\": { \"name\": \"1.19.4\", \"protocol\": 762 }, \"players\": { \"max\": 100, \"online\": 5, \"sample\": [ { \"name\": \"thinkofdeath\", \"id\": \"4566e69f-c907-48ee-8d71-d7ba5aa00d20\" } ] }, \"description\": { \"text\": \"A minecraft server hosted in C!!!\" }, \"enforcesSecureChat\": false, \"previewsChat\": false }";
+    world->motd = "{ \"version\": { \"name\": \"1.21.1\", \"protocol\": 767 }, \"players\": { \"max\": 100, \"online\": 5, \"sample\": [ { \"name\": \"thinkofdeath\", \"id\": \"4566e69f-c907-48ee-8d71-d7ba5aa00d20\" } ] }, \"description\": { \"text\": \"A minecraft server hosted in C!!!\" }, \"enforcesSecureChat\": false, \"previewsChat\": false }";
 
     HANDSHAKE_PACKETS = makeHandshakeCollection();
     STATUS_PACKETS = makePingCollection();

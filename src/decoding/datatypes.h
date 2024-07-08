@@ -1,6 +1,6 @@
 #pragma once
 #include <stdint.h>
-#include "../common.h"
+#include "common.h"
 #include <stdbool.h>
 
 typedef enum {

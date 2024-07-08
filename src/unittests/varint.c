@@ -1,6 +1,6 @@
 #include "testing.h"
-#include "../decoding/datatypes.h"
-#include "../common.h"
+#include "decoding/datatypes.h"
+#include "common.h"
 #include <errno.h>
 #include <limits.h>
 #include <stdint.h>

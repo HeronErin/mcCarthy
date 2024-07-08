@@ -4,7 +4,7 @@
 #include "stdint.h"
 #include <stdint.h>
 
-#include "../common.h"
+#include "common.h"
 #include <endian.h>
 
 

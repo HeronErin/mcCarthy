@@ -1,5 +1,5 @@
 CC      = gcc
-CFLAGS  = -g -IcJSON -Izlib
+CFLAGS  = -g -Isrc -IcJSON -Izlib
 RM      = rm -f
 
 

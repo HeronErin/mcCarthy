@@ -1,26 +1,30 @@
-#include <endian.h>
-#include <stdint.h>
 #include <stdio.h>
-#include "common.h"
 #include <stdlib.h>
 #include <string.h>
-#include "cJSON.h"
-#include "decoding/datatypes.h"
+#include <zlib.h>
 
-const uint8_t t[] = {};
+int main() {
+    const char *input = "This is the text to be compressed.";
+    uLong sourceLen = strlen(input) + 1;  // Include the null terminator
 
-int main(){
-//     BUFF* b = MK_BUFF(t);
-//     UUID x;
-//     x.mostSignificant = 0;
-//     x.leastSignificant = 21;
-//     encodeUUID(&b, x);
-//     b->index = 0;
-//     UUID x2;
-//     decodeUUID(b, &x2);
-//     printf("We got %lu %lu\n", x2.mostSignificant, x2.leastSignificant);
-    cJSON *json = cJSON_Parse("[1, 2, 3, \n4]");
-    printf("len: %lu\n", cJSON_GetArraySize(json));
-    cJSON_free(json);
+    // Allocate memory for the destination buffer
+    uLong destLen = compressBound(sourceLen); // Determine the maximum size of the compressed data
+    Bytef *dest = (Bytef *)malloc(destLen);
+
+    // Compress the data
+    int res = compress(dest, &destLen, (const Bytef *)input, sourceLen);
+    if (res != Z_OK) {
+        printf("Compression failed with error code %d\n", res);
+        free(dest);
+        return 1;
+    }
+
+    // Print the size of the compressed data
+    printf("Original size: %lu\n", sourceLen);
+    printf("Compressed size: %lu\n", destLen);
+
+    // Free the allocated memory
+    free(dest);
+
     return 0;
 }

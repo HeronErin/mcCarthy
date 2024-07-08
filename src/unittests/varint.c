@@ -79,6 +79,7 @@ int main(){
     ASSERT_EQ(-1, decodeVarLong(b));
     b->index = 0;
     ASSERT_EQ(0, decodeVarInt(b));
+    ASSERT_SUCCESS();
     ASSERT_FAILURE(EOVERFLOW);
 
     return 0;

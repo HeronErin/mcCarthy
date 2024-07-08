@@ -18,7 +18,7 @@ run: MC
 test: clean $(TESTOBJS)
 	@for test in $(TESTOBJS); do \
 		echo "Running $$test"; \
-		./$$test | true; \
+		./$$test; \
 	done
 
 $(TESTSRC)/%.o: $(TESTSRC)/%.c

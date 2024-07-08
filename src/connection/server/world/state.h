@@ -1,5 +1,7 @@
 #pragma once
+
 #include "decoding/datatypes.h"
+
 
 typedef enum{
     STATE_HANDSHAKE = 0,
@@ -23,7 +25,9 @@ typedef struct {
 
 typedef struct {
     int hasCompression; // 0 = none, more is the threshold (see: https://wiki.vg/Protocol#Without_compression)
+    int fd;
     CONNECTION_STATE state;
+    
     float x, y, z;
     UUID uuid;
 } PlayerState;

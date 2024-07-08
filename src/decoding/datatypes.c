@@ -92,7 +92,7 @@ int encodeVarLong(BUFF** buff, int32_t value){ return encodeVarLongUnsigned(buff
 // ===========================================================
 
 
-#define _DECODE_RANGE_CHECK(__BUFFER, __ADD) if (__BUFFER->index + __ADD >= __BUFFER->size){\
+#define _DECODE_RANGE_CHECK(__BUFFER, __ADD) if (__BUFFER->index + __ADD > __BUFFER->size){\
         errno = ERANGE;\
         return -1;\
     }
@@ -180,36 +180,7 @@ int encodeUUID(BUFF** buff, UUID uuid){
         return -1;
     return 0;
 }
-int decodeFixedUtf8String(BUFF* buff, uint8_t** result, size_t length){
-    size_t outputReserveSize = length * 3 + 3;
-    *result = (uint8_t*)realloc(*result, outputReserveSize);
-    uint8_t* itr = *result;
 
-    uint8_t* from = buff->index + buff->data;
-    const uint8_t* extent = buff->size + buff->data;
-    uint8_t currentByte;
-
-    while(length > 0){
-        if (extent <= from){
-            errno = ERANGE;
-            return -1;
-        }
-        // THIS SHOULD NEVER HAPPEN IN THE WILD, just an emergency backup.
-        if (itr - *result >= outputReserveSize){
-            outputReserveSize*=2;
-            uint8_t* oprItr = *result;
-            *result = realloc(*result, outputReserveSize);
-            itr = itr - oprItr + *result;
-        }
-        currentByte = *(from++);
-        *(itr++) = currentByte;
-        
-        if ((0x80 & currentByte) == 0) length--;
-    }
-    *(itr) = 0;
-    buff->index = from - buff->data;
-    return 0;
-}
 int decodeString(BUFF* buff, uint8_t** result, size_t knownMaxOrDefault){
     int32_t size = 0;
     if (knownMaxOrDefault == 0)
@@ -222,9 +193,12 @@ int decodeString(BUFF* buff, uint8_t** result, size_t knownMaxOrDefault){
         errno = EOVERFLOW;
         return -1;
     }
-    return decodeFixedUtf8String(buff, result, size);
+    *result = malloc(size);
+    memcpy(*result, buff->data + buff->index, size);
+    buff->index += size;
+    return 0;
 }
-size_t countUtf8Characters(uint8_t* string){
+size_t countUtf8Characters(const uint8_t* string){
     size_t count = 0;
     while (*string){
         if ((0x80 & *string) == 0) count++;
@@ -232,21 +206,22 @@ size_t countUtf8Characters(uint8_t* string){
     }
     return count;
 }
-int encodeString(BUFF** buff, uint8_t* string, size_t knownMaxOrDefault){
+int encodeString(BUFF** buff, const uint8_t* string, size_t knownMaxOrDefault){
     if (knownMaxOrDefault == 0)
         knownMaxOrDefault = 32767;
-    size_t size = countUtf8Characters(string);
-
-    if (size > knownMaxOrDefault){
+    
+    size_t byteLength = strlen((const char*)string);
+    if (byteLength > knownMaxOrDefault){
         perror("Attempted to write string that is too large\n");
         errno = EOVERFLOW;
         return -1;
     }
-    size_t byteLength = strlen((const char*)string);
+    encodeVarInt(buff, byteLength);
     if (0 != extendFor(buff, (*buff)->index + byteLength))
         return -1;
     memcpy((*buff)->index + (*buff)->data, string, byteLength);
     (*buff)->index += byteLength;
+    (*buff)->size = (*buff)->index;
     return 0;
 
 }

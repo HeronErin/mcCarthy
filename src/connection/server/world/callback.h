@@ -1,22 +1,30 @@
 #pragma once
 #include "common.h"
+#include "connection/server/serverConfig.h"
+#include "state.h"
+#include "decoding/packet.h"
 
-typedef struct{
-    int id;
-    int (*decodePacket)(uint8_t packetId, BUFF* buff, void** resultptr);
-    void (*handlePacket)(void** state, void** playerState, void* packet);
-} PacketCallback;
+typedef int (*DecodePacketCallback)(uint8_t packetId, BUFF* buff, PacketPrototype** resultptr);
+typedef TCP_ACTION (*OnPacketCallback)(WorldState** _worldState, PlayerState** playerState, int fd, PacketPrototype* packet);
+typedef struct {
+    OnPacketCallback callback;
+    void* next;
+} CallbackNode;
 
-PacketCallback* findCallback(PacketCallback callbacks[], size_t length, int id){
-    for(int i = 0; i < length; i++){
-        if (callbacks[i].id == id)
-            return &callbacks[i];
-    }
-    return NULL;
-}
+typedef struct {
+    size_t blobReserve;
+    size_t blobSize;
+    CallbackNode* callbackBlob;
+
+    DecodePacketCallback decoders[0xFF]; 
+    CallbackNode* callbackHeads[0xFF];
+} CallbackCollection;
+
+CallbackCollection* createCollection();
+void freeCollection(CallbackCollection* collection);
 
 
-typedef int (*PacketDecodeCallback)(uint8_t, BUFF *, void **);
-typedef void (*PacketReceivedCallback)(void** state, void** playerState, void* packet);
+
+#include "callback.c"
 
 

@@ -90,6 +90,6 @@ int encodeUUID(BUFF** buff, UUID uuid);
 
 int decodeFixedUtf8String(BUFF* buff, uint8_t** result, size_t length);
 int decodeString(BUFF* buff, uint8_t** result, size_t knownMaxOrDefault);
-int encodeString(BUFF** buff, uint8_t* string, size_t knownMaxOrDefault);
+int encodeString(BUFF** buff, const uint8_t* string, size_t knownMaxOrDefault);
 
 #include "datatypes.c"

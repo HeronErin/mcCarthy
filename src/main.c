@@ -6,16 +6,18 @@
 #include <string.h>
 #include "decoding/datatypes.h"
 
-const uint8_t t[] = {0, 0};
+const uint8_t t[] = {};
 
 int main(){
     BUFF* b = MK_BUFF(t);
-    uint16_t x = htobe16(69);
-    memcpy(b->data, &x, 2);
-    uint16_t x2;
-    decodeShortUnsigned(b, &x2);
-    
-    printf("We got %hu  %d\n", x2, errno);
+    UUID x;
+    x.mostSignificant = 0;
+    x.leastSignificant = 21;
+    encodeUUID(&b, x);
+    b->index = 0;
+    UUID x2;
+    decodeUUID(b, &x2);
+    printf("We got %lu %lu\n", x2.mostSignificant, x2.leastSignificant);
 
     return 0;
 }

@@ -1,5 +1,6 @@
 #include "common.h"
 #include "stdint.h"
+#include <errno.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
@@ -22,16 +23,39 @@ BUFF* remakeBuff(BUFF* buff, size_t size, size_t index){
     buff->reserved = size;
     return buff;
 }
-void writeByte(BUFF** buff, uint8_t b){
-    BUFF* bf = *buff;
-    if (bf->index+1 >= bf->reserved){
-        bf->reserved = (bf->index+1)*2; // This is a bad way of doing things
-        bf = (BUFF*) realloc(bf, bf->reserved + sizeof(BUFF));
-        *buff = bf;
+
+
+int extendFor(BUFF** buff, size_t newIndex) {
+    if (buff == NULL || *buff == NULL) {
+        errno = EINVAL;
+        return -1;
     }
+
+    BUFF* bf = *buff;
+    if (newIndex >= bf->reserved) {
+        size_t newReserved = newIndex * 2;
+        BUFF* newBuff = (BUFF*) realloc(bf, newReserved + sizeof(BUFF));
+        
+        if (newBuff == NULL) {
+            errno = ENOMEM;
+            return -1;
+        }
+
+        newBuff->reserved = newReserved;
+        newBuff->size = newIndex;
+        *buff = newBuff;
+    }
+
+    return 0;
+}
+int writeByte(BUFF** buff, uint8_t b){
+    if (0 != extendFor(buff, (*buff)->index + 1))
+        return -1;
+    BUFF* bf = *buff;
     bf->data[bf->index++] = b;
     if (bf->index > bf->size)
         bf->size = bf->index;
+    return 0;
 }
 
 BUFF* quickBuff(size_t size, const uint8_t* data){

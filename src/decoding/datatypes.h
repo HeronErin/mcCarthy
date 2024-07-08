@@ -46,6 +46,12 @@ typedef enum {
 
 } NetworkDatatype;
 
+typedef struct{
+    uint64_t leastSignificant;
+    uint64_t mostSignificant;
+} UUID;
+
+
 int decodeVarInt(BUFF *buff, int32_t *value);
 int decodeVarIntUnsigned(BUFF *buff, uint32_t *value);
 int decodeVarLong(BUFF *buff, int64_t *value);
@@ -56,5 +62,30 @@ int encodeVarIntUnsigned(BUFF** buff, uint32_t value);
 int encodeVarLongUnsigned(BUFF** buff, uint64_t value);
 int encodeVarInt(BUFF** buff, int32_t value);
 int encodeVarLong(BUFF** buff, int32_t value);
+
+int decodeByte(BUFF* buff, int8_t* val);
+int decodeByteUnsigned(BUFF* buff, uint8_t* val);
+
+#define encodeByte writeByte
+#define encodeByteUnsigned writeByte
+
+int decodeShortUnsigned(BUFF* buff, uint16_t* ret);
+int decodeShort(BUFF* buff, int16_t* ret);
+int encodeShortUnsigned(BUFF** buff, uint16_t val);
+int encodeShort(BUFF** buff, int16_t val);
+
+
+int decodeIntUnsigned(BUFF* buff, uint32_t* ret);
+int decodeInt(BUFF* buff, int32_t* ret);
+int encodeIntUnsigned(BUFF** buff, uint32_t val);
+int encodeInt(BUFF** buff, int32_t val);
+
+int decodeLongUnsigned(BUFF* buff, uint64_t* ret);
+int decodeLong(BUFF* buff, uint64_t* ret);
+int encodeLongUnsigned(BUFF** buff, uint64_t val);
+int encodeLong(BUFF** buff, int64_t val);
+
+int decodeUUID(BUFF* buff, UUID* uuid);
+int encodeUUID(BUFF** buff, UUID uuid);
 
 #include "datatypes.c"

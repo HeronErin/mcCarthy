@@ -3,9 +3,11 @@
 #include "errno.h"
 #include "stdint.h"
 #include <stdint.h>
+#include <stdio.h>
 
 #include "common.h"
 #include <endian.h>
+#include <string.h>
 
 
 #define VARINT_SEGMENT      0x7F
@@ -154,4 +156,73 @@ int encodeUUID(BUFF** buff, UUID uuid){
     if (0 != encodeLongUnsigned(buff, uuid.leastSignificant))
         return -1;
     return 0;
+}
+int decodeFixedUtf8String(BUFF* buff, uint8_t** result, size_t length){
+    size_t outputReserveSize = length * 3 + 3;
+    *result = (uint8_t*)realloc(*result, outputReserveSize);
+    uint8_t* itr = *result;
+
+    uint8_t* from = buff->index + buff->data;
+    const uint8_t* extent = buff->size + buff->data;
+    uint8_t currentByte;
+
+    while(length > 0){
+        if (extent <= from){
+            errno = ERANGE;
+            return -1;
+        }
+        // THIS SHOULD NEVER HAPPEN IN THE WILD, just an emergency backup.
+        if (itr - *result >= outputReserveSize){
+            outputReserveSize*=2;
+            uint8_t* oprItr = *result;
+            *result = realloc(*result, outputReserveSize);
+            itr = itr - oprItr + *result;
+        }
+        currentByte = *(from++);
+        *(itr++) = currentByte;
+        
+        if ((0x80 & currentByte) == 0) length--;
+    }
+    *(itr) = 0;
+    return 0;
+}
+int decodeString(BUFF* buff, uint8_t** result, size_t knownMaxOrDefault){
+    int32_t size = 0;
+    if (knownMaxOrDefault == 0)
+        knownMaxOrDefault = 32767;
+
+    if (0 != decodeVarInt(buff, &size))
+        return -1;
+    if (size > knownMaxOrDefault){
+        perror("Attempted to read string that is too large\n");
+        errno = EOVERFLOW;
+        return -1;
+    }
+    return decodeFixedUtf8String(buff, result, size);
+}
+size_t countUtf8Characters(uint8_t* string){
+    size_t count = 0;
+    while (*string){
+        if ((0x80 & *string) == 0) count++;
+        string++;
+    }
+    return count;
+}
+int encodeString(BUFF** buff, uint8_t* string, size_t knownMaxOrDefault){
+    if (knownMaxOrDefault == 0)
+        knownMaxOrDefault = 32767;
+    size_t size = countUtf8Characters(string);
+
+    if (size > knownMaxOrDefault){
+        perror("Attempted to write string that is too large\n");
+        errno = EOVERFLOW;
+        return -1;
+    }
+    size_t byteLength = strlen((const char*)string);
+    if (0 != extendFor(buff, (*buff)->index + byteLength))
+        return -1;
+    memcpy((*buff)->index + (*buff)->data, string, byteLength);
+    (*buff)->index += byteLength;
+    return 0;
+
 }

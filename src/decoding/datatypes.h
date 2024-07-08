@@ -1,5 +1,7 @@
 #pragma once
 #include <stdint.h>
+#include "../common.h"
+#include <stdbool.h>
 
 typedef enum {
     // Size: 1 byte
@@ -43,5 +45,16 @@ typedef enum {
     DT_BYTE_ARRAY,   // Length prefixed
 
 } NetworkDatatype;
+
+int decodeVarInt(BUFF *buff, int32_t *value);
+int decodeVarIntUnsigned(BUFF *buff, uint32_t *value);
+int decodeVarLong(BUFF *buff, int64_t *value);
+int decodeVarLongUnsigned(BUFF *buff, uint64_t *value);
+
+
+int encodeVarIntUnsigned(BUFF** buff, uint32_t value);
+int encodeVarLongUnsigned(BUFF** buff, uint64_t value);
+int encodeVarInt(BUFF** buff, int32_t value);
+int encodeVarLong(BUFF** buff, int32_t value);
 
 #include "datatypes.c"

@@ -12,7 +12,7 @@ default: MC
 MC: $(SRC)/main.c
 	$(CC) $(CFLAGS) -o MC $(SRC)/main.c
 
-run: MC
+run: clean MC
 	./MC
 
 test: clean $(TESTOBJS)

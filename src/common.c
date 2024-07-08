@@ -26,7 +26,7 @@ void writeByte(BUFF** buff, uint8_t b){
     BUFF* bf = *buff;
     if (bf->index+1 >= bf->reserved){
         bf->reserved = (bf->index+1)*2; // This is a bad way of doing things
-        bf = realloc(bf, bf->reserved + sizeof(BUFF));
+        bf = (BUFF*) realloc(bf, bf->reserved + sizeof(BUFF));
         *buff = bf;
     }
     bf->data[bf->index++] = b;

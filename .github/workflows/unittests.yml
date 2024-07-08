@@ -13,6 +13,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-      submodules: 'true'
+      with:
+        submodules: 'recursive'
     - name: Run tests
       run: make test

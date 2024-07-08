@@ -31,7 +31,7 @@
 }
 #define ASSERT_EQ(XXXX, YYYY) if ((XXXX) != (YYYY)){                           \
     fprintf(stderr,                                          \
-        "\nFailed unittest %s on line %d. Left value(%p) != Right value(%p)\n", \
+        "\nFailed unittest %s on line %d. Left value(%lx) != Right value(%lx)\n", \
         __FILE__, __LINE__, (XXXX), (YYYY));\
     exit(-1);\
 }

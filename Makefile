@@ -18,12 +18,14 @@ cJSON/cJSON.o:
 zlib/libz.a:
 	cd zlib && sh ./configure
 	make static -C zlib -j 4
+
 packet.o: src/decoding/packet.c
 	$(CC) $(CFLAGS) -shared -o packet.o src/decoding/packet.c
 loginCallbacks.o: src/connection/server/world/loginCallbacks.c
 	$(CC) $(CFLAGS) -shared -o loginCallbacks.o src/connection/server/world/loginCallbacks.c
 callback.o: src/connection/server/world/callback.c
 	$(CC) $(CFLAGS) -shared -o callback.o src/connection/server/world/callback.c
+
 run: clean MC
 	./MC
 

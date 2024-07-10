@@ -6,11 +6,14 @@
 #include "decoding/packets/serverbound/ClientInformation.c"
 #include "decoding/packets/clientbound/StatusResponse.c"
 #include "decoding/packets/clientbound/LoginSuccess.c"
+#include "decoding/packets/clientbound/FeatureFlags.c"
 
 
 #include "decoding/packets/clientbound/pong.c"
 #include "decoding/packets/serverbound/ping.c"
 #include <string.h>
+
+// https://wiki.vg/Protocol_FAQ
 
 // ==================================
 //     Handshake / Status callbacks
@@ -43,6 +46,11 @@ TCP_ACTION handlePing(WorldState **world, PlayerState **player, int packetId, Pa
     return TCP_ACT_NOTHING;
 }
 
+// ==================================
+//     Handshake / Login callbacks
+// ==================================
+
+
 TCP_ACTION handleLoginStart(WorldState **world, PlayerState **player, int packetId, LoginStartPacketC2S *packet){
     PlayerState* ps = *player;
     strncpy((char*)ps->username, (const char*)packet->username, sizeof(packet->username));
@@ -62,6 +70,8 @@ TCP_ACTION handleLoginStart(WorldState **world, PlayerState **player, int packet
 }
 TCP_ACTION handleLoginAck(WorldState **world, PlayerState **player, int packetId, PacketPrototype *packet){
     (*player)->state = STATE_CONFIGURATION;
+
+
     return TCP_ACT_NOTHING;
 }
 

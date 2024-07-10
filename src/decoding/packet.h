@@ -14,7 +14,7 @@ typedef struct{
 
 typedef int (*SendPacketCallback)(BUFF** buff, PacketPrototype* resultptr);
 
+int NoOpC2S(uint8_t packetId, BUFF* buff, PacketPrototype** resultptr);
+
 int sendPacket(PlayerState *player, PacketPrototype* proto, SendPacketCallback sendFunction);
 #define SEND(PLAYER, PROTO, FUNC) sendPacket((PlayerState*)PLAYER, (PacketPrototype*)PROTO, (SendPacketCallback)FUNC)
-
-#include "packet.c"

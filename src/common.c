@@ -43,8 +43,11 @@ int extendFor(BUFF** buff, size_t newIndex) {
 
         newBuff->reserved = newReserved;
         newBuff->size = newIndex;
-        *buff = newBuff;
+        bf = newBuff;
+        *buff = bf;
     }
+    if (newIndex > bf->size)
+        bf->size = newIndex;
 
     return 0;
 }

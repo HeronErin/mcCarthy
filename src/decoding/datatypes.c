@@ -180,7 +180,7 @@ int encodeUUID(BUFF** buff, UUID uuid){
         return -1;
     return 0;
 }
-
+// Automatically resize result buffer to be correct size
 int decodeString(BUFF* buff, uint8_t** result, size_t knownMaxOrDefault){
     int32_t size = 0;
     if (knownMaxOrDefault == 0)
@@ -188,8 +188,11 @@ int decodeString(BUFF* buff, uint8_t** result, size_t knownMaxOrDefault){
 
     if (0 != decodeVarInt(buff, &size))
         return -1;
-    if (size > knownMaxOrDefault){
-        perror("Attempted to read string that is too large\n");
+    if (size > knownMaxOrDefault || buff->index + size >= buff->size){
+        perror(size > knownMaxOrDefault ? 
+            "Attempted to read string that is too large\n" 
+          : "Attempted to read string past end of buffer\n"
+        );
         errno = EOVERFLOW;
         return -1;
     }
@@ -198,6 +201,25 @@ int decodeString(BUFF* buff, uint8_t** result, size_t knownMaxOrDefault){
     buff->index += size;
     return 0;
 }
+// Copy buffer, of maxSize, with no heap allocations
+int decodeFixedString(BUFF* buff, uint8_t* result, size_t maxSize){
+    int32_t size = 0;
+    if (0 != decodeVarInt(buff, &size))
+        return -1;
+    if (size > maxSize || buff->index + size >= buff->size){
+        perror(size > maxSize ? 
+            "Attempted to read string that is too large\n" 
+          : "Attempted to read string past end of buffer\n"
+        );
+        errno = EOVERFLOW;
+        return -1;
+    }
+
+    memcpy(result, buff->data + buff->index, size);
+    buff->index += size;
+    return 0;
+}
+
 size_t countUtf8Characters(const uint8_t* string){
     size_t count = 0;
     while (*string){

@@ -24,7 +24,5 @@ CallbackCollection* createCollection();
 void freeCollection(CallbackCollection* collection);
 
 
-
-#include "callback.c"
-
+void addPacketCallback(CallbackCollection* collection, int packetId, OnPacketCallback callback);
 

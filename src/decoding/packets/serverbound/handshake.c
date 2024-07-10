@@ -34,9 +34,3 @@ int decodeHandshakePacketC2S(uint8_t packetId, BUFF* buff, HandshakePacketC2S** 
 
     return 0;
 }
-
-int decodeStatusRequestPacketC2S(uint8_t packetId, BUFF* buff, PacketPrototype** resultptr){
-    *resultptr = malloc(sizeof(PacketPrototype));
-    return 0;
-}
-

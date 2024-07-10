@@ -1,8 +1,14 @@
-#pragma once
 #include "packet.h"
 #include "common.h"
 #include "decoding/datatypes.h"
 #include "connection/server/world/state.h"
+
+
+int NoOpC2S(uint8_t packetId, BUFF* buff, PacketPrototype** resultptr){
+    *resultptr = malloc(sizeof(PacketPrototype));
+    (*resultptr)->packetId = packetId;
+    return 0;
+}
 
 int sendPacket(PlayerState *player, PacketPrototype* proto, SendPacketCallback sendFunction){
     BUFF* buff = (BUFF*) malloc(128 + sizeof(BUFF));
@@ -12,12 +18,11 @@ int sendPacket(PlayerState *player, PacketPrototype* proto, SendPacketCallback s
 
     if (0 != sendFunction(&buff, proto))
         return -1;
-    printf("Size: %lu  Index: %lu\n", buff->size, buff->index);
     size_t oldIndex = buff->index;
     int oldSize = buff->index;
     if (0 != encodeVarInt(&buff, oldSize))
         return -1;
-    printf("Size: %lu  Index: %lu\n", buff->size, buff->index);
+    
     int diff = buff->size - oldSize;
     buff->size = oldSize;
     buff->index = oldSize;
@@ -27,5 +32,5 @@ int sendPacket(PlayerState *player, PacketPrototype* proto, SendPacketCallback s
     
 
     free(buff);
-    
+    return 0;   
 }

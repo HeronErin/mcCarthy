@@ -51,6 +51,9 @@ typedef struct{
     uint64_t mostSignificant;
 } UUID;
 
+#define STRING_LEN(NNN) (NNN) * 3 + 3
+
+
 int decodeVarIntFromFd(int fd, int* res);
 int decodeVarInt(BUFF *buff, int32_t *value);
 int decodeVarIntUnsigned(BUFF *buff, uint32_t *value);
@@ -88,7 +91,7 @@ int encodeLong(BUFF** buff, int64_t val);
 int decodeUUID(BUFF* buff, UUID* uuid);
 int encodeUUID(BUFF** buff, UUID uuid);
 
-int decodeFixedUtf8String(BUFF* buff, uint8_t** result, size_t length);
+int decodeFixedString(BUFF* buff, uint8_t* result, size_t maxSize);
 int decodeString(BUFF* buff, uint8_t** result, size_t knownMaxOrDefault);
 int encodeString(BUFF** buff, const uint8_t* string, size_t knownMaxOrDefault);
 

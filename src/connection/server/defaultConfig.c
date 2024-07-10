@@ -12,21 +12,26 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "world/defaultCallbacks.c"
+#include "world/loginCallbacks.h"
 
 #define MAX_PACKET_SIZE 32*1024*1024 // 32 mb
 
 
 static const CallbackCollection* HANDSHAKE_PACKETS = NULL;
 static const CallbackCollection* STATUS_PACKETS = NULL;
+static const CallbackCollection* LOGIN_START_PACKETS = NULL;
+static const CallbackCollection* CONFIG_PACKETS = NULL;
 
 void initWorld(void** state){
     *state = realloc(*state, sizeof(WorldState));
     WorldState* world = *(WorldState**)state;
     world->motd = "{ \"version\": { \"name\": \"1.21.1\", \"protocol\": 767 }, \"players\": { \"max\": 100, \"online\": 5, \"sample\": [ { \"name\": \"thinkofdeath\", \"id\": \"4566e69f-c907-48ee-8d71-d7ba5aa00d20\" } ] }, \"description\": { \"text\": \"A minecraft server hosted in C!!!\" }, \"enforcesSecureChat\": false, \"previewsChat\": false }";
+    world->doEnableCompression = false;
 
     HANDSHAKE_PACKETS = makeHandshakeCollection();
     STATUS_PACKETS = makePingCollection();
+    LOGIN_START_PACKETS = makeLoginStartCollection();
+    CONFIG_PACKETS = makeConfigCollection();
 }
 TCP_ACTION initPlayer(void** _worldState, void** playerState, int fd){
     WorldState* world = *(WorldState**)_worldState;
@@ -39,6 +44,8 @@ TCP_ACTION initPlayer(void** _worldState, void** playerState, int fd){
     player->x = 0;
     player->y = 50;
     player->z = 0;
+    player->gamemode = GM_Creative;
+
     return TCP_ACT_NOTHING;
 }
 TCP_ACTION handlePacket(void** _worldState, void** playerState, int fd){
@@ -52,7 +59,7 @@ TCP_ACTION handlePacket(void** _worldState, void** playerState, int fd){
         return TCP_ACT_DISCONNECT_CLIENT;
     if (MAX_PACKET_SIZE < packetSize){
         errno = ERANGE;
-        perror("Client attempted absurdly large packet");
+        perror("Client attempted an absurdly large packet");
         return TCP_ACT_DISCONNECT_CLIENT;
     }
     packetData = realloc(packetData, packetSize);
@@ -74,6 +81,12 @@ TCP_ACTION handlePacket(void** _worldState, void** playerState, int fd){
             break;
         case STATE_STATUS:
             callbackCollection = STATUS_PACKETS;
+            break;
+        case STATE_LOGIN_START:
+            callbackCollection = LOGIN_START_PACKETS;
+            break;
+        case STATE_CONFIGURATION:
+            callbackCollection = CONFIG_PACKETS;
             break;
         default:
             callbackCollection = NULL;
@@ -106,16 +119,8 @@ TCP_ACTION handlePacket(void** _worldState, void** playerState, int fd){
         }
         node = node->next;
     }
-    // const CallbackPage* page = findCallbackPage(MASTER_PACKET_CALLBACKS, LENGTH(MASTER_PACKET_CALLBACKS), player->state);
-    // PacketCallback* callback = findCallback(*page->callbacks, page->length, id);
-    // void* packet = NULL;
-    // if (callback != NULL){
-        // callback->decodePacket(id, b, &packet);
-        // callback->handlePacket(_worldState, playerState, packet);
-    // }else {
-        // printf("Unhandled packet of id: %d in state: %d\n", id, player->state);
-    // }
-    
+    if (packet) free(packet);
+    free(b);
 
     return TCP_ACT_NOTHING;
 }

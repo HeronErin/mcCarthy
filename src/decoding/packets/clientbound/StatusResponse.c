@@ -17,7 +17,7 @@ typedef struct{
 int encodeStatusResponseS2C(BUFF** buff, StatusResponseS2C* resultptr){
     if (
         0 != encodeVarInt(buff, resultptr->packet.packetId)
-    ||  0 != encodeString(buff, resultptr->data, 32767)
+    ||  0 != encodeString(buff, resultptr->data, STRING_LEN(32767))
     ) return -1;
 
     return 0;

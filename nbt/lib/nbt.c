@@ -15,6 +15,9 @@
 //       '---'        `----'      Library.
 // Not the best NBT implementation, but it works.
 
+// Original Mojang spec: https://web.archive.org/web/20110723210920/http://www.minecraft.net/docs/NBT.txt
+// Community documentation: https://wiki.vg/NBT
+
 
 #include "nbt.h"
 #include <stdint.h>
@@ -147,23 +150,23 @@ int populateFromPayload(NbtTag* tagToPopulate, uint8_t type, uint8_t** binRef, u
             break;
         case T_Int:
             if (bin + 4 > extent){errno = ERANGE; return -1;}
-            tagToPopulate->intValue = *(int32_t*)bin;
+            tagToPopulate->intValue = be32toh(*(int32_t*)bin);
             bin+=4;
             break;
         case T_Long:
             if (bin + 8 > extent){errno = ERANGE; return -1;}
-            tagToPopulate->longValue = *(int64_t*)bin;
+            tagToPopulate->longValue = be64toh(*(int64_t*)bin);
             bin+=8;
             break;
         case T_float:
             if (bin + sizeof(float) > extent){errno = ERANGE; return -1;}
-            int floatRaw = be32toh(*(int*)bin);
+            int floatRaw = be32toh(*(int*)bin);  // We need to convert endianness as an int, otherwise things get messed up. 
             tagToPopulate->floatValue =  *(float*)(&floatRaw);
             bin+=sizeof(float);
             break;
         case T_Double:
             if (bin + sizeof(double) > extent){errno = ERANGE; return -1;}
-            long doubleRaw = be64toh(*(long*)bin);
+            long doubleRaw = be64toh(*(long*)bin); // Ditto
             tagToPopulate->doubleValue = *(double*)&doubleRaw;
             bin+=sizeof(double);
             break;

@@ -6,7 +6,7 @@
 #include <string.h>
 
 int main(){
-    FILE* fp = fopen("bigtest.nbt", "r");
+    FILE* fp = fopen("hello_world.nbt", "r");
     fseek(fp, 0, SEEK_END);
     size_t l = ftell(fp);
     fseek(fp, 0, SEEK_SET);
@@ -16,8 +16,11 @@ int main(){
     
 
     NbtTag* t = parseGzipBinary(buff, l);
-    perror(strerror(errno));
-    printNbt(t);
+    uint8_t* bin;
+    size_t size;
+    printf("Ret: %d\n", writeBinary(t, &bin, &size));
+    // perror(strerror(errno));
+    // printNbt(t);
 
     return 0;
 }

@@ -76,3 +76,6 @@ NbtTag* parseBinary(uint8_t* bin, size_t len);
 NbtTag* parseZlibBinary(uint8_t* bin, size_t len);
 NbtTag* parseGzipBinary(uint8_t* bin, size_t len);
 void printNbt(NbtTag* root);
+
+
+int writeBinary(NbtTag* tag, uint8_t** outBin, size_t* length);

@@ -112,7 +112,6 @@ int gzip_decompress(const Bytef *source, uLong sourceLen, Bytef **dest, uLong *d
 int populateFromPayload(NbtTag* tagToPopulate, uint8_t type, uint8_t** binRef, uint8_t* extent){
     uint8_t* bin = *binRef;
     tagToPopulate->type = type;
-    fprintf(stderr, "Type: %hu\n", type);
     uint16_t datalen;
     switch (type){
         case T_End:
@@ -193,8 +192,10 @@ int populateFromPayload(NbtTag* tagToPopulate, uint8_t type, uint8_t** binRef, u
             CompoundElement** elements = malloc(reserveElementSize * sizeof(void*));
             size_t elementIndex = 0;
             while(1){
-                if (bin >= extent) break; // Assume that if we reached the end of the buffer, the compound is over. 
+                if (bin >= extent-1) break; // Assume that if we reached the end of the buffer, the compound is over. 
 
+
+                // TODO: THIS SEGFAULTS!!!
                 uint8_t type =  *(bin++);
                 if (type == T_End) break;
                 if (bin+2 > extent){errno = ERANGE; return -1;}
@@ -207,7 +208,7 @@ int populateFromPayload(NbtTag* tagToPopulate, uint8_t type, uint8_t** binRef, u
 
                 uint16_t strlen = be16toh(*(uint16_t*)bin);
                 bin+=2;
-                fprintf(stderr, "Ex: %d %hu\n", type, strlen);
+
                 if (bin+strlen > extent){errno = ERANGE; return -1;}
                 char* name = malloc(strlen+1);
                 memcpy(name, bin, strlen);
@@ -225,6 +226,100 @@ int populateFromPayload(NbtTag* tagToPopulate, uint8_t type, uint8_t** binRef, u
     }
     *binRef = bin;
     return 0;
+}
+int writePayload(NbtTag* tag, uint8_t** binRef, size_t* index, size_t* reserve){
+    int i;
+    uint8_t* bin = *binRef;
+    #define extentFor(SIZE) if ((SIZE) > *reserve){*reserve *= 2;fprintf(stderr, "Reserve: %lu as %lu\n", *reserve, (SIZE)); bin = realloc(bin, *reserve); if (bin == NULL) return -1;}
+    
+    switch (tag->type){
+        case T_End:
+            break;
+        case T_Byte:
+            extentFor(*index + 1);
+            bin[(*index)++] = tag->byteValue;
+            break;
+        case T_Short:
+            extentFor(*index + 2);
+            *(short*)&bin[*index] = htobe16(tag->shortValue);
+            *index += 2;
+            break;
+        case T_Int:
+            extentFor(*index + 4);
+            *(int*)&bin[*index] = htobe32(tag->intValue);
+            *index += 4;
+            break;
+        case T_Long:
+            extentFor(*index + 8);
+            *(long*)&bin[*index] = htobe64(tag->longValue);
+            *index += 8;
+            break;
+        case T_float:
+            extentFor(*index + 4);
+            int floatAsInt = htobe32(*(int*)&tag->floatValue);
+            *(int*)&bin[*index] = floatAsInt;
+            *index += 4;
+            break;
+        case T_Double:
+            extentFor(*index + 8);
+            long doubleAsLong = htobe64(*(long*)&tag->floatValue);
+            *(long*)&bin[*index] = doubleAsLong;
+            *index += 8;
+            break;
+        case T_Byte_Array:
+            extentFor(*index + 4 + tag->byteArraySize);
+            bin[*index] = htobe32(tag->byteArraySize);
+            *index += 4;
+            memcpy(bin + *index, tag->byteArrayBuffer, tag->byteArraySize);
+            *index += tag->byteArraySize;
+            break;
+        case T_String:
+            extentFor(*index + 2 + tag->stringSize);
+            bin[*index] = htobe16(tag->stringSize);
+            *index += 2;
+            memcpy(bin + *index, tag->stringBuffer, tag->stringSize);
+            *index += tag->stringSize;
+            break;
+        case T_List:
+            extentFor(*index + 1 + 4);
+            int lsize = tag->listSize;
+
+            bin[(*index)++] = tag->listContentType;
+            *(int*)&bin[*index] = htobe32(tag->listSize);
+            *index+=4;
+            for (i = 0; i < lsize; i++){
+                if (0 != writePayload(&tag->nbtListTags[i], &bin, index, reserve))
+                    return -1;
+            }
+            break;
+        case T_Compound:
+            int csize = tag->compoundLength;
+            for (i = 0; i < csize; i++){
+                CompoundElement* element = tag->compoundElements[i];
+                size_t nameLen = strlen(element->name);
+                extentFor(*index + nameLen + 2 + 1);
+                bin[(*index)++] = element->tag.type;
+                *(short*)&bin[*index] = htobe16(nameLen);
+                *index += 2;
+                memcpy(&bin[*index], element->name, nameLen);
+                if (0 != writePayload(&element->tag, &bin, index, reserve))
+                    return -1;
+            }
+            extentFor(*index + 1);
+            bin[(*index)++] = 0;
+            break;
+    }
+    *binRef = bin;
+    return 0;
+}
+
+int writeBinary(NbtTag* tag, uint8_t** outBin, size_t* length){
+    size_t reserve = 512;
+    uint8_t* bin = malloc(reserve);
+    *length = 0;
+
+    return writePayload(tag, &bin, length, &reserve);
+
 }
 
 

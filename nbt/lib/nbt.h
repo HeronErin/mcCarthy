@@ -45,10 +45,14 @@ struct _NbtTag {
         double doubleValue;
         
         struct{
+            // Compounds can't be known at parse time how large they are,
+            // so it make sense to use this style of array.
             int compoundLength;
             struct _CompoundElement** compoundElements;
         };
         struct{
+            // Lists are length prefixed, so they get one contiguous buffer.
+
             int listSize;
             TAG_TYPE listContentType;
             struct _NbtTag* nbtListTags;
@@ -79,3 +83,5 @@ void printNbt(NbtTag* root);
 
 
 int writeBinary(NbtTag* tag, uint8_t** outBin, size_t* length);
+int writeZlibBinary(NbtTag* tag, uint8_t** outBin, size_t* length);
+int writeGzipBinary(NbtTag* tag, uint8_t** outBin, size_t* length);

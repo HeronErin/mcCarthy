@@ -1,4 +1,5 @@
 MC
+nbt/NBT
 *.o
 .vscode/
 */*.o

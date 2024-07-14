@@ -116,17 +116,25 @@ int populateFromPayload(NbtTag* tagToPopulate, uint8_t type, uint8_t** binRef, u
     switch (type){
         case T_End:
             break;
-        
         case T_Byte_Array:
             if (bin+4 > extent){errno = ERANGE; return -1;}
             datalen = be32toh(*(uint32_t*)bin);
             bin+=4;
-            goto AFTER_STRING_BIN_INC;
+            
+            if (bin+datalen > extent){errno = ERANGE; return -1;}
+            
+            char* toData = malloc(datalen+1);
+            memcpy(toData, bin, datalen);
+            toData[datalen] = 0;
+            
+            bin += datalen;
+            tagToPopulate->byteArraySize = datalen;
+            tagToPopulate->byteArrayBuffer = toData;
+            break;
         case T_String:
             if (bin+2 > extent){errno = ERANGE; return -1;}
             datalen = be16toh(*(uint16_t*)bin);
             bin+=2;
-            AFTER_STRING_BIN_INC:
             
             if (bin+datalen > extent){errno = ERANGE; return -1;}
             
@@ -230,7 +238,13 @@ int populateFromPayload(NbtTag* tagToPopulate, uint8_t type, uint8_t** binRef, u
 int writePayload(NbtTag* tag, uint8_t** binRef, size_t* index, size_t* reserve){
     int i;
     uint8_t* bin = *binRef;
-    #define extentFor(SIZE) if ((SIZE) > *reserve){*reserve *= 2;fprintf(stderr, "Reserve: %lu as %lu\n", *reserve, (SIZE)); bin = realloc(bin, *reserve); if (bin == NULL) return -1;}
+    #define extentFor(SIZE) \
+        if ((SIZE) > *reserve){\
+            *reserve *= 2;\
+            fprintf(stderr, "Reserve: %lu as %lu\n", *reserve, (SIZE));\
+            bin = realloc(bin, *reserve);\
+            if (bin == NULL) return -1;\
+        }
     
     switch (tag->type){
         case T_End:
@@ -268,14 +282,14 @@ int writePayload(NbtTag* tag, uint8_t** binRef, size_t* index, size_t* reserve){
             break;
         case T_Byte_Array:
             extentFor(*index + 4 + tag->byteArraySize);
-            bin[*index] = htobe32(tag->byteArraySize);
+            *(int*)&bin[*index] = htobe32(tag->byteArraySize);
             *index += 4;
             memcpy(bin + *index, tag->byteArrayBuffer, tag->byteArraySize);
             *index += tag->byteArraySize;
             break;
         case T_String:
             extentFor(*index + 2 + tag->stringSize);
-            bin[*index] = htobe16(tag->stringSize);
+            *(short*)&bin[*index] = htobe16(tag->stringSize);
             *index += 2;
             memcpy(bin + *index, tag->stringBuffer, tag->stringSize);
             *index += tag->stringSize;
@@ -302,6 +316,7 @@ int writePayload(NbtTag* tag, uint8_t** binRef, size_t* index, size_t* reserve){
                 *(short*)&bin[*index] = htobe16(nameLen);
                 *index += 2;
                 memcpy(&bin[*index], element->name, nameLen);
+                *index += nameLen;
                 if (0 != writePayload(&element->tag, &bin, index, reserve))
                     return -1;
             }
@@ -314,12 +329,15 @@ int writePayload(NbtTag* tag, uint8_t** binRef, size_t* index, size_t* reserve){
 }
 
 int writeBinary(NbtTag* tag, uint8_t** outBin, size_t* length){
+    int r;
     size_t reserve = 512;
-    uint8_t* bin = malloc(reserve);
+    *outBin = malloc(reserve);
     *length = 0;
 
-    return writePayload(tag, &bin, length, &reserve);
-
+    if (0 != ( r = writePayload(tag, outBin, length, &reserve) ) )
+        return r;
+    *length -= 1; // Otherwise root node will produce an unneeded null byte, we can just decrease the length to discard it.
+    return 0;
 }
 
 
@@ -398,7 +416,7 @@ NbtTag* parseZlibBinary(uint8_t* bin, size_t len){
     uint8_t* compressed = (uint8_t*)malloc(compressLen);
 
     int r = uncompress(compressed, &compressLen, bin, len);
-    printf("Dlen %lu: %d\n", compressLen, r);
+    if (r != 0) return NULL;
     NbtTag* nbt = parseBinary(compressed, compressLen);
     free(compressed);
     return nbt;
@@ -408,12 +426,75 @@ NbtTag* parseGzipBinary(uint8_t* bin, size_t len){
     uint8_t* compressed = NULL;
 
     int r = gzip_decompress(bin, len, &compressed, &compressLen);
-    printf("Dlen %lu: %d\n", compressLen, r);
+    if (r != 0) return NULL;
     NbtTag* nbt = parseBinary(compressed, compressLen);
     // free(compressed);
     return nbt;
 }
 
+int writeGzipBinary(NbtTag* tag, uint8_t** outBin, size_t* length){
+    uint8_t* tempBuff;
+    size_t tempLen;
+    int r;
 
+    if (0 != writeBinary(tag, &tempBuff, &tempLen))
+        return -1;
+    if (0 != (r = gzip_compress(tempBuff, tempLen, outBin, length)))
+        return r;
+    free(tempBuff);
+    return 0;
+}
+int writeZlibBinary(NbtTag* tag, uint8_t** outBin, size_t* length){
+    uint8_t* tempBuff;
+    size_t tempLen;
+    int r;
 
+    if (0 != writeBinary(tag, &tempBuff, &tempLen))
+        return -1;
+    *length = compressBound(tempLen);
+    *outBin = malloc(*length);
+    if (0 != (r=compress(*outBin, length, tempBuff, tempLen) ))
+        return r;
+    free(tempBuff);
+    return 0;
+}
+
+void _freeNbt(NbtTag* tag){
+    int i;
+    size_t size;
+    switch (tag->type) {
+        // These don't have other things we need to care about
+        case T_Short:
+        case T_Int:
+        case T_Long:
+        case T_float:
+        case T_Double:
+        case T_Byte:
+        case T_End:
+            break;
+        case T_Byte_Array:
+            free((void*) tag->byteArrayBuffer);
+            break;
+        case T_String:
+            free((void*) tag->stringBuffer);
+            break;
+
+        case T_List:
+            free(tag->nbtListTags);
+            break;
+        case T_Compound:
+            size = tag->compoundLength;
+            
+            CompoundElement** elements = tag->compoundElements;
+            for (i = 0; i < size; i++){
+                CompoundElement* element = elements[i];
+                if (element != NULL) free(element);
+            }
+            free(elements);
+            break;
+    }
+}
+void freeNbt(NbtTag* tag){
+
+}
 

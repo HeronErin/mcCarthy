@@ -241,7 +241,6 @@ int writePayload(NbtTag* tag, uint8_t** binRef, size_t* index, size_t* reserve){
     #define extentFor(SIZE) \
         if ((SIZE) > *reserve){\
             *reserve *= 2;\
-            fprintf(stderr, "Reserve: %lu as %lu\n", *reserve, (SIZE));\
             bin = realloc(bin, *reserve);\
             if (bin == NULL) return -1;\
         }
@@ -495,6 +494,7 @@ void _freeNbt(NbtTag* tag){
     }
 }
 void freeNbt(NbtTag* tag){
-
+    _freeNbt(tag);
+    free(tag);
 }
 

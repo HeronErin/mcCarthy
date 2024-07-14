@@ -76,9 +76,15 @@ struct _CompoundElement {
 };
 typedef struct _CompoundElement CompoundElement;
 
+
+typedef NbtTag* (*NbtDecodeFunction)(uint8_t* bin, size_t len);
+typedef int (*NbtEncodeFunction)(NbtTag* tag, uint8_t** outBin, size_t* length);
+
 NbtTag* parseBinary(uint8_t* bin, size_t len);
 NbtTag* parseZlibBinary(uint8_t* bin, size_t len);
 NbtTag* parseGzipBinary(uint8_t* bin, size_t len);
+
+void freeNbt(NbtTag* tag);
 void printNbt(NbtTag* root);
 
 

@@ -34,6 +34,7 @@ test: clean zlib/libz.a cJSON/cJSON.o $(TESTOBJS)
 		echo "Running $$test"; \
 		./$$test; \
 	done
+	make run -C nbt
 $(TESTSRC)/%.o: $(TESTSRC)/%.c
 	$(CC) $(CFLAGS) -o $@ $< zlib/libz.a cJSON/cJSON.o
 

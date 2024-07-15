@@ -7,10 +7,10 @@ default: NBT
 lib: nbt.o
 
 nbt.o: lib/nbt.c ../zlib/libz.a
-	$(CC) $(CFLAGS) -shared -o nbt.o lib/nbt.c ../zlib/libz.a
+	$(CC) $(CFLAGS) -c -o nbt.o lib/nbt.c
 
 NBT: nbt.o
-	$(CC) $(CFLAGS) -o NBT main.c nbt.o
+	$(CC) $(CFLAGS) -o NBT main.c nbt.o ../zlib/libz.a
 
 run: clean NBT
 	./NBT

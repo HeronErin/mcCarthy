@@ -14,17 +14,17 @@ MC: callback.o packet.o loginCallbacks.o cJSON/cJSON.o zlib/libz.a src/main.c
 	$(CC) $(CFLAGS) -o MC src/main.c zlib/libz.a cJSON/cJSON.o packet.o loginCallbacks.o callback.o
 
 cJSON/cJSON.o:
-	$(CC) $(CFLAGS) -shared -o cJSON/cJSON.o cJSON/cJSON.c
+	$(CC) $(CFLAGS) -c -o cJSON/cJSON.o cJSON/cJSON.c
 zlib/libz.a:
 	cd zlib && sh ./configure
 	make static -C zlib -j 4
 
 packet.o: src/decoding/packet.c
-	$(CC) $(CFLAGS) -shared -o packet.o src/decoding/packet.c
+	$(CC) $(CFLAGS) -c -o packet.o src/decoding/packet.c
 loginCallbacks.o: src/connection/server/world/loginCallbacks.c
-	$(CC) $(CFLAGS) -shared -o loginCallbacks.o src/connection/server/world/loginCallbacks.c
+	$(CC) $(CFLAGS) -c -o loginCallbacks.o src/connection/server/world/loginCallbacks.c
 callback.o: src/connection/server/world/callback.c
-	$(CC) $(CFLAGS) -shared -o callback.o src/connection/server/world/callback.c
+	$(CC) $(CFLAGS) -c -o callback.o src/connection/server/world/callback.c
 
 run: clean MC
 	./MC

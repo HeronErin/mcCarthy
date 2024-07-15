@@ -13,22 +13,14 @@ typedef enum {
     T_Byte_Array,
     T_String,
     T_List,
-    T_Compound
+    T_Compound,
+
+    // Not in original spec
+    T_Int_Array,
+    T_Long_Array
 } TAG_TYPE;
 
-const char* TAG_TYPE_NAMES[] = {
-    "TAG_End",
-    "TAG_Byte",
-    "TAG_Short",
-    "TAG_Int",
-    "TAG_Long",
-    "TAG_Float",
-    "TAG_Double",
-    "TAG_Byte_Array",
-    "TAG_String",
-    "TAG_List",
-    "TAG_Compound"
-};
+extern const char* TAG_TYPE_NAMES[13];
 
 
 
@@ -57,7 +49,14 @@ struct _NbtTag {
             TAG_TYPE listContentType;
             struct _NbtTag* nbtListTags;
         };
-        
+        struct{
+            int intArrayLen;
+            int32_t* intArray;
+        };
+        struct{
+            int longArrayLen;
+            int64_t* longArray;
+        };
         struct{
             int byteArraySize;
             const uint8_t* byteArrayBuffer;

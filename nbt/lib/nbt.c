@@ -107,12 +107,28 @@ int gzip_decompress(const Bytef *source, uLong sourceLen, Bytef **dest, uLong *d
     return Z_OK;
 }
 
-
+const char* TAG_TYPE_NAMES[13] = {
+    "TAG_End",
+    "TAG_Byte",
+    "TAG_Short",
+    "TAG_Int",
+    "TAG_Long",
+    "TAG_Float",
+    "TAG_Double",
+    "TAG_Byte_Array",
+    "TAG_String",
+    "TAG_List",
+    "TAG_Compound",
+    "TAG_Int_Array",
+    "TAG_Long_Array"
+};
 
 int populateFromPayload(NbtTag* tagToPopulate, uint8_t type, uint8_t** binRef, uint8_t* extent){
     uint8_t* bin = *binRef;
     tagToPopulate->type = type;
     uint16_t datalen;
+    size_t reserveElementSize;
+
     switch (type){
         case T_End:
             break;
@@ -177,6 +193,36 @@ int populateFromPayload(NbtTag* tagToPopulate, uint8_t type, uint8_t** binRef, u
             tagToPopulate->doubleValue = *(double*)&doubleRaw;
             bin+=sizeof(double);
             break;
+        case T_Int_Array:
+            if (bin + 4 > extent){errno = ERANGE; return -1;}
+            int32_t intListLen = be32toh(*(int32_t*)bin);
+            bin+=4;
+
+            tagToPopulate->intArrayLen = intListLen;
+            if (bin + 4 * intListLen > extent){errno = ERANGE; return -1;}
+            int32_t* intArray = malloc(4 * intListLen);
+            tagToPopulate->intArray = intArray;
+
+            for (int i = 0; i < intListLen; i++){
+                intArray[i] = be32toh(*(int32_t*)bin);
+                bin += 4;
+            }
+            break;
+        case T_Long_Array:
+            if (bin + 4 > extent){errno = ERANGE; return -1;}
+            int32_t longListLen = be32toh(*(int32_t*)bin);
+            bin+=4;
+
+            tagToPopulate->longArrayLen = longListLen;
+            if (bin + 8 * longListLen > extent){errno = ERANGE; return -1;}
+            int64_t* longArray = malloc(8 * longListLen);
+            tagToPopulate->longArray = longArray;
+
+            for (int i = 0; i < longListLen; i++){
+                longArray[i] = be64toh(*(int64_t*)bin);
+                bin += 8;
+            }
+            break;
         case T_List:
             if (bin + 1 /*byte*/ + 4 /*int*/ > extent){errno = ERANGE; return -1;}
             uint8_t type = *(bin++);
@@ -196,7 +242,7 @@ int populateFromPayload(NbtTag* tagToPopulate, uint8_t type, uint8_t** binRef, u
 
             break;
         case T_Compound:
-            size_t reserveElementSize = 128;
+            reserveElementSize = 128;
             CompoundElement** elements = malloc(reserveElementSize * sizeof(void*));
             size_t elementIndex = 0;
             while(1){
@@ -236,10 +282,10 @@ int populateFromPayload(NbtTag* tagToPopulate, uint8_t type, uint8_t** binRef, u
     return 0;
 }
 int writePayload(NbtTag* tag, uint8_t** binRef, size_t* index, size_t* reserve){
-    int i;
+    int i, size;
     uint8_t* bin = *binRef;
     #define extentFor(SIZE) \
-        if ((SIZE) > *reserve){\
+        while ((SIZE) > *reserve){\
             *reserve *= 2;\
             bin = realloc(bin, *reserve);\
             if (bin == NULL) return -1;\
@@ -295,19 +341,19 @@ int writePayload(NbtTag* tag, uint8_t** binRef, size_t* index, size_t* reserve){
             break;
         case T_List:
             extentFor(*index + 1 + 4);
-            int lsize = tag->listSize;
+            size = tag->listSize;
 
             bin[(*index)++] = tag->listContentType;
             *(int*)&bin[*index] = htobe32(tag->listSize);
             *index+=4;
-            for (i = 0; i < lsize; i++){
+            for (i = 0; i < size; i++){
                 if (0 != writePayload(&tag->nbtListTags[i], &bin, index, reserve))
                     return -1;
             }
             break;
         case T_Compound:
-            int csize = tag->compoundLength;
-            for (i = 0; i < csize; i++){
+            size = tag->compoundLength;
+            for (i = 0; i < size; i++){
                 CompoundElement* element = tag->compoundElements[i];
                 size_t nameLen = strlen(element->name);
                 extentFor(*index + nameLen + 2 + 1);
@@ -321,6 +367,32 @@ int writePayload(NbtTag* tag, uint8_t** binRef, size_t* index, size_t* reserve){
             }
             extentFor(*index + 1);
             bin[(*index)++] = 0;
+            break;
+        case T_Int_Array:
+            extentFor(*index + 4);
+            *(int*)&bin[*index] = htobe32(tag->intArrayLen);
+            *index += 4;
+            size = tag->intArrayLen;
+            extentFor(*index + 4 * size);
+
+            for (i = 0; i < size; i++){
+                *(int*)&bin[*index] = htobe32(tag->intArray[i]);
+                *index += 4;
+            }
+
+            break;
+        case T_Long_Array:
+            extentFor(*index + 4);
+            *(int*)&bin[*index] = htobe32(tag->longArrayLen);
+            *index += 4;
+            size = tag->intArrayLen;
+            extentFor(*index + 8 * size);
+
+            for (i = 0; i < size; i++){
+                *(long*)&bin[*index] = htobe64(tag->longArray[i]);
+                *index += 8;
+            }
+
             break;
     }
     *binRef = bin;
@@ -355,6 +427,22 @@ void printNbt_(NbtTag* element, char* knownName, int knownIndex, int tabCount){
             break;
         case T_Byte_Array:
             printf(") [Containing %d bytes]\n", element->byteArraySize);
+            break;
+        case T_Int_Array:
+            printf(") [Containing %d ints]\n", element->intArrayLen);
+            for (i = 0; i < element->intArrayLen; i++){
+                tabCountTemp = tabCount;
+                while(tabCountTemp--) putchar('\t');
+                printf("\t-%d\n", element->intArray[i]);
+            }
+            break;
+        case T_Long_Array:
+            printf(") [Containing %d longs]\n", element->longArrayLen);
+            for (i = 0; i < element->longArrayLen; i++){
+                tabCountTemp = tabCount;
+                while(tabCountTemp--) putchar('\t');
+                printf("\t* %ld\n", element->longArray[i]);
+            }
             break;
         case T_String:
             printf(") [Containing %d bytes]: %s\n", element->stringSize, element->stringBuffer);
@@ -490,6 +578,12 @@ void _freeNbt(NbtTag* tag){
                 if (element != NULL) free(element);
             }
             free(elements);
+            break;
+        case T_Int_Array:
+            free(tag->intArray);
+            break;
+        case T_Long_Array:
+            free(tag->longArray);
             break;
     }
 }

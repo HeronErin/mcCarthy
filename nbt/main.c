@@ -18,6 +18,7 @@ struct Test{
 
 const struct Test tests[] = {
     {"hello_world.nbt", &parseBinary},
+    {"int_test.nbt", &parseBinary},
     {"bigtest.nbt", &parseGzipBinary}
 };
 
@@ -40,6 +41,10 @@ int main(){
 
         // Open file and get length
         fp = fopen(test.name, "r");
+        if (fp == NULL){
+            printf("[NBT Tests] File not found: %s\n", test.name);
+            exit(-1);
+        }
         fseek(fp, 0, SEEK_END);
         fileSize = ftell(fp);
         fseek(fp, 0, SEEK_SET);
@@ -78,7 +83,8 @@ int main(){
             printf("[NBT Tests] During final file rencode, using function writeBinary(), binary was not identical! %s\n", test.name);
             exit(-1);
         }
-
+        printNbt(tagFromFile);
+        
         freeNbt(tagFromReEncode);
         freeNbt(tagFromFile);
         free(fileBuff);

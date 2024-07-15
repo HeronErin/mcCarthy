@@ -20,4 +20,4 @@ run: clean NBT
 	make static -C ../zlib -j 4
 
 clean:
-	-$(RM) NBT nbt.o
+	-$(RM) NBT nbt.o *.o

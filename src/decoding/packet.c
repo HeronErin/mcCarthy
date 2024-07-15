@@ -2,7 +2,7 @@
 #include "common.h"
 #include "decoding/datatypes.h"
 #include "connection/server/world/state.h"
-
+#include <unistd.h>
 
 int NoOpC2S(uint8_t packetId, BUFF* buff, PacketPrototype** resultptr){
     *resultptr = malloc(sizeof(PacketPrototype));

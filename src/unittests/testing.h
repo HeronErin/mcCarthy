@@ -5,9 +5,9 @@
 #include <string.h>
 
 
-#define ASSERT_SUCCESS() if (errno != 0){                                       \
+#define ASSERT_SUCCESS() if (errno != 0){                                  \
     fprintf(stderr,                                                        \
-        "\nFailed unittest %s on line %d with error: %s(%d)\n",             \
+        "\nFailed unittest %s on line %d with error: %s(%d)\n",            \
         __FILE__, __LINE__, strerror(errno), errno                         \
     );                                                                     \
     exit(-1);                                                              \
@@ -23,16 +23,16 @@
     exit(-1);                                      \
 } errno = 0
 
-#define ASSERT(XXXX) if (!(XXXX)){                           \
-    fprintf(stderr,                                          \
+#define ASSERT(XXXX) if (!(XXXX)){                             \
+    fprintf(stderr,                                            \
         "\nFailed unittest %s on line %d. Assertion failed\n", \
-        __FILE__, __LINE__);\
-    exit(-1);\
+        __FILE__, __LINE__);                                   \
+    exit(-1);                                                  \
 }
-#define ASSERT_EQ(XXXX, YYYY) if ((XXXX) != (YYYY)){                           \
-    fprintf(stderr,                                          \
+#define ASSERT_EQ(XXXX, YYYY) if ((XXXX) != (YYYY)){                              \
+    fprintf(stderr,                                                               \
         "\nFailed unittest %s on line %d. Left value(%lx) != Right value(%lx)\n", \
-        __FILE__, __LINE__, (XXXX), (YYYY));\
-    exit(-1);\
+        __FILE__, __LINE__, (XXXX), (YYYY));                                      \
+    exit(-1);                                                                     \
 }
 

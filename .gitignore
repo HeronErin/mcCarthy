@@ -3,3 +3,9 @@ nbt/NBT
 *.o
 .vscode/
 */*.o
+
+
+CMakeCache.txt
+*.cmake
+CMakeFiles/
+build/
